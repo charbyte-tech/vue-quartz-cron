@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/brenwell/each-after.git"
+    "url": "git+https://github.com/caehprogrammer/vue-quartz-cron.git"
   },
   "keywords": [
     "vuetify",
@@ -26,9 +26,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/brenwell/each-after/issues"
+    "url": "https://github.com/caehprogrammer/vue-quartz-cron.git"
   },
-  "homepage": "https://github.com/brenwell/each-after#readme",
+  "homepage": "https://github.com/caehprogrammer/vue-quartz-cron#readme",
   "main": "vue-quartz-cron.common.js",
   "unpkg": "vue-quartz-cron.common.js",
   "jsdelivr": "vue-quartz-cron.common.js",
