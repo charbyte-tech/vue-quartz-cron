@@ -1,14 +1,12 @@
 <template>
-  <v-app>
-    <v-main>
-      <CronQuartz v-model="cronExpression" />
-    </v-main>
-  </v-app>
+  <div>
+    <CronQuartz v-model="cronExpression" />
+  </div>
 </template>
 <script>
 import CronQuartz from "@/components/CronQuartz.vue";
 export default {
-  name: "App",
+  name: "Cron",
   components: {
     CronQuartz
   },

@@ -1,16 +1,49 @@
 {
-  "name": "vue-quartz-cron",
+  "name": "@charbytex/vue-quartz-cron",
   "version": "0.1.0",
-  "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
+    "build:release": "vue-cli-service build --target lib --name vue-quartz-cron src/index.js",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
+  "description": "Vue Quartz Cron library based on vue-cli-3",
+  "author": {
+    "name": "Carlos Antonio Escobar Hernandez"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brenwell/each-after.git"
+  },
+  "keywords": [
+    "vuetify",
+    "vue",
+    "cron",
+    "quartz",
+    "jobs",
+    "scheduler"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brenwell/each-after/issues"
+  },
+  "homepage": "https://github.com/brenwell/each-after#readme",
+  "main": "vue-quartz-cron.common.js",
+  "unpkg": "vue-quartz-cron.common.js",
+  "jsdelivr": "vue-quartz-cron.common.js",
+  "peerDependencies": {
+    "vue": ">=2.6.11"
+  },
+  "files": [
+    "*"
+  ],
   "dependencies": {
     "core-js": "^3.6.5",
-    "vue": "^2.6.11"
+    "cron-validate": "^1.3.1",
+    "cronstrue": "^1.101.0",
+    "vue": "^2.6.11",
+    "vuetify": "^2.2.11"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^4.5.0",
@@ -27,6 +60,8 @@
     "prettier": "^1.19.1",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
-    "vue-template-compiler": "^2.6.11"
+    "vue-cli-plugin-vuetify": "^2.0.7",
+    "vue-template-compiler": "^2.6.11",
+    "vuetify-loader": "^1.3.0"
   }
 }
