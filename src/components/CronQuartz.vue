@@ -1,54 +1,48 @@
 <template>
-  <div>
-    <v-row>
-      <v-col cols="12" xl="6">
-        <v-card tile height="auto">
-          <v-card-title class="primary white--text">
-            <v-icon large left color="white">
-              mdi-text-recognition
-            </v-icon>
-            <span class="title headline mb-1">{{ value.description }}</span>
-          </v-card-title>
-          <v-card-subtitle class="primary white--text">
-            <v-icon small left color="white">
-              mdi-regex
-            </v-icon>
-            <span class="title headline mb-1 text-decoration-underline">{{
-              value.value
-            }}</span>
-          </v-card-subtitle>
-          <v-card-text class="cardText">
-            <v-row>
-              <v-col cols="12" sm="6" md="6" lg="6" xl="6">
-                <SecondsCron v-model="secondsCron" />
-              </v-col>
-              <v-col cols="12" sm="6" md="6" lg="6" xl="6">
-                <MinutesCron v-model="minutesCron" />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12" sm="12" md="12" lg="12" xl="12">
-                <HoursCron v-model="hoursCron" />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12" sm="12" md="12" lg="12" xl="12">
-                <DaysCron v-model="daysCron" />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12" sm="6" md="6" lg="6" xl="6">
-                <MonthsCron v-model="monthsCron" />
-              </v-col>
-              <v-col cols="12" sm="6" md="6" lg="6" xl="6">
-                <YearsCron v-model="yearsCron" />
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </div>
+  <v-card tile height="auto">
+    <v-card-title class="primary white--text">
+      <v-icon large left color="white">
+        mdi-text-recognition
+      </v-icon>
+      <span class="title headline mb-1">{{ description }}</span>
+    </v-card-title>
+    <v-card-subtitle class="primary white--text">
+      <v-icon small left color="white">
+        mdi-regex
+      </v-icon>
+      <span class="title headline mb-1 text-decoration-underline">{{
+        value
+      }}</span>
+    </v-card-subtitle>
+    <v-card-text class="cardText">
+      <v-row>
+        <v-col cols="12" sm="6" md="6" lg="6" xl="6">
+          <SecondsCron v-model="secondsCron" />
+        </v-col>
+        <v-col cols="12" sm="6" md="6" lg="6" xl="6">
+          <MinutesCron v-model="minutesCron" />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12" sm="12" md="12" lg="12" xl="12">
+          <HoursCron v-model="hoursCron" />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12" sm="12" md="12" lg="12" xl="12">
+          <DaysCron v-model="daysCron" />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12" sm="6" md="6" lg="6" xl="6">
+          <MonthsCron v-model="monthsCron" />
+        </v-col>
+        <v-col cols="12" sm="6" md="6" lg="6" xl="6">
+          <YearsCron v-model="yearsCron" />
+        </v-col>
+      </v-row>
+    </v-card-text>
+  </v-card>
 </template>
 <style scoped>
 .cardText {
@@ -82,7 +76,7 @@ const presetCronValidate = {
 export default {
   name: "CronQuartz",
   props: {
-    value: { type: Object }
+    value: { type: String }
   },
   components: {
     SecondsCron,
@@ -93,6 +87,7 @@ export default {
     YearsCron
   },
   data: () => ({
+    description: null,
     secondsCron: "*",
     minutesCron: "*",
     hoursCron: "*",
@@ -104,30 +99,33 @@ export default {
     yearsCron: "*"
   }),
   watch: {
+    value() {
+      this.__updateValue();
+    },
     secondsCron() {
-      this.updateValue();
+      this.__updateValue();
     },
     minutesCron() {
-      this.updateValue();
+      this.__updateValue();
     },
     hoursCron() {
-      this.updateValue();
+      this.__updateValue();
     },
     daysCron: {
       deep: true,
       handler() {
-        this.updateValue();
+        this.__updateValue();
       }
     },
     monthsCron() {
-      this.updateValue();
+      this.__updateValue();
     },
     yearsCron() {
-      this.updateValue();
+      this.__updateValue();
     }
   },
   methods: {
-    updateValue() {
+    __updateValue() {
       this.monthsCron = this.monthsCron.replace("@", "");
       this.daysCron.dayOfWeek = this.daysCron.dayOfWeek.replace("@", "");
       this.yearsCron = this.yearsCron.replace("@", "");
@@ -147,26 +145,20 @@ export default {
         this.yearsCron;
       const cronResult = cron(cronExpression, presetCronValidate);
       if (cronResult.isValid()) {
-        let expresionData = {
-          value: cronExpression,
-          description: cronstrue.toString(cronExpression, {
-            locale: "es",
-            dayOfWeekStartIndexZero: false
-          })
-        };
-        this.$emit("input", expresionData);
+        this.description = cronstrue.toString(cronExpression, {
+          locale: "es",
+          dayOfWeekStartIndexZero: false
+        });
+        this.$emit("input", cronExpression);
       } else {
         const errorValue = cronResult.getError();
-        console.log(errorValue);
-        let expresionData = {
-          error: errorValue
-        };
-        this.$emit("input", expresionData);
+        this.description = errorValue;
+        this.$emit("input", errorValue);
       }
     }
   },
   created() {
-    const cronResult = cron(this.value.value, presetCronValidate);
+    const cronResult = cron(this.value, presetCronValidate);
     if (cronResult.isValid()) {
       const validValue = cronResult.getValue();
       this.secondsCron = validValue.seconds;
@@ -179,7 +171,7 @@ export default {
       this.monthsCron = validValue.months;
       this.yearsCron = validValue.years;
     }
-    this.updateValue();
+    this.__updateValue();
   }
 };
 </script>

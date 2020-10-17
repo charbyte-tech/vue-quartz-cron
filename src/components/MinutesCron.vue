@@ -261,7 +261,10 @@ export default {
       this.startMinute = parseInt(inputValue[0]);
     }
 
-    if (this.value.includes(",") || parseInt(this.value) >= 0) {
+    if (
+      this.value.includes(",") ||
+      (parseInt(this.value) >= 0 && !isNaN(this.value))
+    ) {
       this.minuteOption.key = "minutesSpecific";
       this.minuteOption.value = this.value;
       let inputValue = JSON.parse("[" + this.value + "]");

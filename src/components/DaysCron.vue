@@ -673,7 +673,7 @@ export default {
 
     if (
       this.value.dayOfWeek.includes(",") ||
-      parseInt(this.value.dayOfWeek) >= 0
+      (parseInt(this.value.dayOfWeek) >= 0 && !isNaN(this.value.dayOfWeek))
     ) {
       this.dayOption.key = "daysSpecific";
       this.dayOption.values = {
@@ -687,7 +687,7 @@ export default {
 
     if (
       this.value.dayOfMonth.includes(",") ||
-      parseInt(this.value.dayOfMonth) >= 0
+      (parseInt(this.value.dayOfMonth) >= 0 && !isNaN(this.value.dayOfMonth))
     ) {
       this.dayOption.key = "daysOfMonthSpecific";
       this.dayOption.values = {

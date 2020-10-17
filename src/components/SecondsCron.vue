@@ -259,8 +259,10 @@ export default {
       this.everyAnySecond = parseInt(inputValue[1]);
       this.startSecond = parseInt(inputValue[0]);
     }
-
-    if (this.value.includes(",") || parseInt(this.value) >= 0) {
+    if (
+      this.value.includes(",") ||
+      (parseInt(this.value) >= 0 && !isNaN(this.value))
+    ) {
       this.secondOption.key = "secondsSpecific";
       this.secondOption.value = this.value;
       let inputValue = JSON.parse("[" + this.value + "]");

@@ -272,7 +272,10 @@ export default {
       this.startMonth = parseInt(inputValue[0]);
     }
 
-    if (this.value.includes(",") || parseInt(this.value) >= 0) {
+    if (
+      this.value.includes(",") ||
+      (parseInt(this.value) >= 0 && !isNaN(this.value))
+    ) {
       this.monthOption.key = "monthsSpecific";
       this.monthOption.value = this.value;
       let inputValue = JSON.parse("[" + this.value + "]");

@@ -1,10 +1,12 @@
 {
   "name": "@charbytex/vue-quartz-cron",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "build:release": "vue-cli-service build --target lib --name vue-quartz-cron src/index.js",
+    "build1": "",
+    "build:release": "vue-cli-service build --target lib --name vue-quartz-cron src/index.js && cp package.json dist && cp README.md dist",
+    "release:full": "npm install && npm run build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
