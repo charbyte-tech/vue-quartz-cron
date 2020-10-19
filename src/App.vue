@@ -24,7 +24,8 @@
             <v-card-text>
               <CronQuartz
                 v-model="cronExpression"
-                @descripcion-value="descripcionValue"
+                show-value
+                @description-value="descripcionValue"
               />
               {{ description }}
             </v-card-text>
@@ -54,7 +55,7 @@ export default {
     openDialog() {
       this.dialog = true;
       this.incremental++;
-      this.cronExpression = "0-3 0-0 1-4 ? 1-1 1#1 2016,2019";
+      this.cronExpression = "* * * ? * " + this.incremental + " *";
     }
   }
 };

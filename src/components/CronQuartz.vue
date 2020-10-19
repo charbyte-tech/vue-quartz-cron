@@ -86,7 +86,7 @@ export default {
   },
   data: () => ({
     descriptionValue: null,
-    cronExpresion: null,
+    cronExpression: null,
     secondsCron: "*",
     minutesCron: "*",
     hoursCron: "*",
@@ -135,7 +135,7 @@ export default {
       this.__updateValue();
     },
     descriptionValue() {
-      this.$emit("descripcion-value", this.descriptionValue);
+      this.$emit("description-value", this.descriptionValue);
     },
     cronExpression() {
       this.$emit("input", this.cronExpression);
@@ -146,7 +146,7 @@ export default {
       this.monthsCron = this.monthsCron.replace("@", "");
       this.daysCron.dayOfWeek = this.daysCron.dayOfWeek.replace("@", "");
       this.yearsCron = this.yearsCron.replace("@", "");
-      this.cronExpression =
+      let cronExpression =
         this.secondsCron +
         " " +
         this.minutesCron +
@@ -160,9 +160,9 @@ export default {
         this.daysCron.dayOfWeek +
         " " +
         this.yearsCron;
-      const cronResult = cron(this.cronExpression, presetCronValidate);
+      const cronResult = cron(cronExpression, presetCronValidate);
       if (cronResult.isValid()) {
-        this.descriptionValue = cronstrue.toString(this.cronExpression, {
+        this.descriptionValue = cronstrue.toString(cronExpression, {
           locale: "es",
           dayOfWeekStartIndexZero: false
         });
@@ -170,6 +170,7 @@ export default {
         const errorValue = cronResult.getError();
         this.descriptionValue = errorValue;
       }
+      this.cronExpression = cronExpression;
     }
   },
   created() {

@@ -320,13 +320,16 @@ export default {
     reseting: false
   }),
   watch: {
-    value() {
-      if (
-        JSON.stringify(this.value) !== JSON.stringify(this.dayOption.values)
-      ) {
-        this.resetValues();
-        this.dayOption.values = this.value;
-        this.setValues();
+    value: {
+      deep: true,
+      handler() {
+        if (
+          JSON.stringify(this.value) !== JSON.stringify(this.dayOption.values)
+        ) {
+          this.resetValues();
+          this.dayOption.values = this.value;
+          this.setValues();
+        }
       }
     },
     dayOption: {
@@ -467,7 +470,7 @@ export default {
       this.reseting = false;
     },
     updateValue() {
-      this.$emit("input", this.dayOption.values);
+      this.$emit("input", JSON.parse(JSON.stringify(this.dayOption.values)));
     },
     resetDayOfMonth() {
       this.dayOption.values.dayOfMonth = "?";
