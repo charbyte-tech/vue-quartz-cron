@@ -3,7 +3,12 @@
     <v-main>
       <v-row justify="center">
         <v-btn color="primary" dark @click="openDialog">Open component</v-btn>
-        <v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition">
+        <v-dialog
+          v-model="dialog"
+          fullscreen
+          hide-overlay
+          transition="dialog-bottom-transition"
+        >
           <v-card>
             <v-toolbar dark color="primary">
               <v-btn icon dark @click="dialog = false">
@@ -15,8 +20,13 @@
                 <v-btn dark text @click="dialog = false">Close</v-btn>
               </v-toolbar-items>
             </v-toolbar>
+
             <v-card-text>
-              <CronQuartz v-model="cronExpression" />
+              <CronQuartz
+                v-model="cronExpression"
+                @descripcion-value="descripcionValue"
+              />
+              {{ description }}
             </v-card-text>
           </v-card>
         </v-dialog>
@@ -34,13 +44,17 @@ export default {
   data: () => ({
     dialog: false,
     cronExpression: "5 * * ? * * *",
+    description: null,
     incremental: 0
   }),
   methods: {
+    descripcionValue(value) {
+      this.description = value;
+    },
     openDialog() {
       this.dialog = true;
       this.incremental++;
-      this.cronExpression = "0/" + this.incremental + " * * ? * * *";
+      this.cronExpression = "0-3 0-0 1-4 ? 1-1 1#1 2016,2019";
     }
   }
 };

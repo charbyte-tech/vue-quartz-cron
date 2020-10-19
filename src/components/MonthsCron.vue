@@ -54,6 +54,7 @@
                   <v-select
                     class="pt-0 pb-0 mt-0"
                     v-model="monthsSpecific"
+                    @change="monthsSpecificFn"
                     prefix="Mese(s) "
                     suffix="especifico(s)"
                     item-text="monthLabel"
@@ -81,6 +82,7 @@
                     item-text="monthLabel"
                     item-value="monthValue"
                     :items="monthsIndexList"
+                    item-disabled="disabledBetweenMonthItem"
                     single-line
                     chips
                     deletable-chips
@@ -125,58 +127,77 @@ export default {
     monthsSpecific: [],
     betweenMonth: null,
     andMonth: null,
-    monthsIndexList: []
+    monthsIndexList: [],
+    reseting: false
   }),
   watch: {
+    value() {
+      if (this.value !== this.monthOption.value) {
+        this.resetValues();
+        this.monthOption.value = this.value;
+        this.setValues();
+      }
+    },
     monthOption: {
       deep: true,
       handler(oldValue, newValue) {
-        if (newValue.key === "everyMonth") {
-          this.monthOption.value = "*";
+        if (!this.reseting) {
+          if (newValue.key === "everyMonth") {
+            this.monthOption.value = "*";
+          }
+          if (newValue.key === "everyMonthAt") {
+            if (!this.startMonth || this.startMonth === "") {
+              this.startMonth = 1;
+            }
+            if (!this.everyAnyMonth || this.everyAnyMonth === "") {
+              this.everyAnyMonth = 1;
+            }
+            this.monthOption.value =
+              parseInt(this.startMonth) + "/" + parseInt(this.everyAnyMonth);
+          }
+          if (newValue.key === "monthsSpecific") {
+            let valuesInt = [];
+            if (this.monthsSpecific.length == 0) {
+              this.monthsSpecific.push(1);
+            }
+            this.monthsSpecific.forEach((itemValue) => {
+              valuesInt.push(parseInt(itemValue));
+            });
+            this.monthOption.value = valuesInt.toString();
+          }
+          if (newValue.key === "everyMonthBetween") {
+            if (!this.betweenMonth || this.betweenMonth === "") {
+              this.betweenMonth = 1;
+            }
+            if (!this.andMonth || this.andMonth === "") {
+              this.andMonth = 1;
+            }
+            this.monthOption.value =
+              parseInt(this.betweenMonth) + "-" + parseInt(this.andMonth);
+          }
+          this.updateValue();
         }
-        if (newValue.key === "everyMonthAt") {
-          if (!this.startMonth || this.startMonth === "") {
-            this.startMonth = 1;
-          }
-          if (!this.everyAnyMonth || this.everyAnyMonth === "") {
-            this.everyAnyMonth = 1;
-          }
-          this.monthOption.value =
-            parseInt(this.startMonth) + "/" + parseInt(this.everyAnyMonth);
-        }
-        if (newValue.key === "monthsSpecific") {
-          let valuesInt = [];
-          if (this.monthsSpecific.length == 0) {
-            this.monthsSpecific.push(1);
-          }
-          this.monthsSpecific.forEach((itemValue) => {
-            valuesInt.push(parseInt(itemValue));
-          });
-          this.monthOption.value = valuesInt.toString();
-        }
-        if (newValue.key === "everyMonthBetween") {
-          if (!this.betweenMonth || this.betweenMonth === "") {
-            this.betweenMonth = 1;
-          }
-          if (!this.andMonth || this.andMonth === "") {
-            this.andMonth = 1;
-          }
-          this.monthOption.value =
-            parseInt(this.betweenMonth) + "-" + parseInt(this.andMonth);
-        }
-        this.updateValue();
       }
     },
-    monthsSpecific(value) {
-      this.monthOption.key = "monthsSpecific";
-      let valuesInt = [];
-      value.forEach((itemValue) => {
-        valuesInt.push(parseInt(itemValue));
+    andMonth(value) {
+      this.monthsIndexList = this.monthsIndexList.map((item) => {
+        item.disabledBetweenMonthItem = item.monthValue > value;
+        return item;
       });
-      this.monthOption.value = valuesInt.toString();
     }
   },
   methods: {
+    resetValues() {
+      this.reseting = true;
+      this.monthOption.key = null;
+      this.monthOption.value = 0;
+      this.everyAnyMonths = null;
+      this.startMonths = null;
+      this.monthsSpecific = [];
+      this.betweenMonths = null;
+      this.andMonths = null;
+      this.reseting = false;
+    },
     updateValue() {
       this.$emit("input", this.monthOption.value + "@");
     },
@@ -222,6 +243,14 @@ export default {
       }
       this.monthOption.value = parseInt(this.betweenMonth) + "-" + parseInt(e);
     },
+    monthsSpecificFn(value) {
+      this.monthOption.key = "monthsSpecific";
+      let valuesInt = [];
+      value.forEach((itemValue) => {
+        valuesInt.push(parseInt(itemValue));
+      });
+      this.monthOption.value = valuesInt.toString();
+    },
     buildMonths() {
       for (let m = 0; m < 12; m++) {
         let indexMonthLabel = "" + m;
@@ -256,39 +285,42 @@ export default {
         };
         this.monthsIndexList.push(itemMonth);
       }
+    },
+    setValues() {
+      if (this.value.includes("*")) {
+        this.monthOption.key = "everyMonth";
+        this.monthOption.value = this.value;
+      }
+
+      if (this.value.includes("/")) {
+        this.monthOption.key = "everyMonthAt";
+        this.monthOption.value = this.value;
+        let inputValue = this.value.split("/");
+        this.everyAnyMonth = parseInt(inputValue[1]);
+        this.startMonth = parseInt(inputValue[0]);
+      }
+
+      if (
+        this.value.includes(",") ||
+        (parseInt(this.value) >= 0 && !isNaN(this.value))
+      ) {
+        this.monthOption.key = "monthsSpecific";
+        this.monthOption.value = this.value;
+        let inputValue = JSON.parse("[" + this.value + "]");
+        this.monthsSpecific = inputValue;
+      }
+
+      if (this.value.includes("-")) {
+        this.monthOption.key = "everyMonthBetween";
+        this.monthOption.value = this.value;
+        let inputValue = this.value.split("-");
+        this.betweenMonth = parseInt(inputValue[0]);
+        this.andMonth = parseInt(inputValue[1]);
+      }
     }
   },
   created() {
-    if (this.value.includes("*")) {
-      this.monthOption.key = "everyMonth";
-      this.monthOption.value = this.value;
-    }
-
-    if (this.value.includes("/")) {
-      this.monthOption.key = "everyMonthAt";
-      this.monthOption.value = this.value;
-      let inputValue = this.value.split("/");
-      this.everyAnyMonth = parseInt(inputValue[1]);
-      this.startMonth = parseInt(inputValue[0]);
-    }
-
-    if (
-      this.value.includes(",") ||
-      (parseInt(this.value) >= 0 && !isNaN(this.value))
-    ) {
-      this.monthOption.key = "monthsSpecific";
-      this.monthOption.value = this.value;
-      let inputValue = JSON.parse("[" + this.value + "]");
-      this.monthsSpecific = inputValue;
-    }
-
-    if (this.value.includes("-")) {
-      this.monthOption.key = "everyMonthBetween";
-      this.monthOption.value = this.value;
-      let inputValue = this.value.split("-");
-      this.betweenMonth = parseInt(inputValue[0]);
-      this.andMonth = parseInt(inputValue[1]);
-    }
+    this.setValues();
     this.buildMonths();
   }
 };

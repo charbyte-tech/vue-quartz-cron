@@ -54,6 +54,7 @@
                   <v-select
                     class="pt-0 pb-0 mt-0"
                     v-model="minutesSpecific"
+                    @change="minutesSpecificFn"
                     prefix="Minutos(s) "
                     suffix="especifico(s)"
                     item-text="minuteLabel"
@@ -81,6 +82,7 @@
                     item-text="minuteLabel"
                     item-value="minuteValue"
                     :items="minutesIndexList"
+                    item-disabled="disabledBetweenMinuteItem"
                     single-line
                     chips
                     deletable-chips
@@ -126,58 +128,77 @@ export default {
     betweenMinute: null,
     andMinute: null,
     minutesIndexList: [],
-    minutesList: []
+    minutesList: [],
+    reseting: false
   }),
   watch: {
+    value() {
+      if (this.value !== this.minuteOption.value) {
+        this.resetValues();
+        this.minuteOption.value = this.value;
+        this.setValues();
+      }
+    },
     minuteOption: {
       deep: true,
       handler(oldValue, newValue) {
-        if (newValue.key === "everyMinute") {
-          this.minuteOption.value = "*";
+        if (!this.reseting) {
+          if (newValue.key === "everyMinute") {
+            this.minuteOption.value = "*";
+          }
+          if (newValue.key === "everyMinuteAt") {
+            if (!this.startMinute || this.startMinute === "") {
+              this.startMinute = 0;
+            }
+            if (!this.everyAnyMinute || this.everyAnyMinute === "") {
+              this.everyAnyMinute = 1;
+            }
+            this.minuteOption.value =
+              parseInt(this.startMinute) + "/" + parseInt(this.everyAnyMinute);
+          }
+          if (newValue.key === "minutesSpecific") {
+            let valuesInt = [];
+            if (this.minutesSpecific.length == 0) {
+              this.minutesSpecific.push(0);
+            }
+            this.minutesSpecific.forEach((itemValue) => {
+              valuesInt.push(parseInt(itemValue));
+            });
+            this.minuteOption.value = valuesInt.toString();
+          }
+          if (newValue.key === "everyMinuteBetween") {
+            if (!this.betweenMinute || this.betweenMinute === "") {
+              this.betweenMinute = 0;
+            }
+            if (!this.andMinute || this.andMinute === "") {
+              this.andMinute = 0;
+            }
+            this.minuteOption.value =
+              parseInt(this.betweenMinute) + "-" + parseInt(this.andMinute);
+          }
+          this.updateValue();
         }
-        if (newValue.key === "everyMinuteAt") {
-          if (!this.startMinute || this.startMinute === "") {
-            this.startMinute = 0;
-          }
-          if (!this.everyAnyMinute || this.everyAnyMinute === "") {
-            this.everyAnyMinute = 1;
-          }
-          this.minuteOption.value =
-            parseInt(this.startMinute) + "/" + parseInt(this.everyAnyMinute);
-        }
-        if (newValue.key === "minutesSpecific") {
-          let valuesInt = [];
-          if (this.minutesSpecific.length == 0) {
-            this.minutesSpecific.push(0);
-          }
-          this.minutesSpecific.forEach((itemValue) => {
-            valuesInt.push(parseInt(itemValue));
-          });
-          this.minuteOption.value = valuesInt.toString();
-        }
-        if (newValue.key === "everyMinuteBetween") {
-          if (!this.betweenMinute || this.betweenMinute === "") {
-            this.betweenMinute = 0;
-          }
-          if (!this.andMinute || this.andMinute === "") {
-            this.andMinute = 0;
-          }
-          this.minuteOption.value =
-            parseInt(this.betweenMinute) + "-" + parseInt(this.andMinute);
-        }
-        this.updateValue();
       }
     },
-    minutesSpecific(value) {
-      this.minuteOption.key = "minutesSpecific";
-      let valuesInt = [];
-      value.forEach((itemValue) => {
-        valuesInt.push(parseInt(itemValue));
+    andMinute(value) {
+      this.minutesIndexList = this.minutesIndexList.map((item) => {
+        item.disabledBetweenMinuteItem = item.minuteValue > value;
+        return item;
       });
-      this.minuteOption.value = valuesInt.toString();
     }
   },
   methods: {
+    resetValues() {
+      this.reseting = true;
+      this.minuteOption.key = null;
+      this.minuteOption.value = 0;
+      this.everyAnyMinute = null;
+      this.startMinute = null;
+      this.minutesSpecific = [];
+      this.betweenMinute = null;
+      this.andMinute = null;
+      this.reseting = false;
+    },
     updateValue() {
       this.$emit("input", this.minuteOption.value);
     },
@@ -222,6 +243,14 @@ export default {
       this.minuteOption.value =
         parseInt(this.betweenMinute) + "-" + parseInt(e);
     },
+    minutesSpecificFn(value) {
+      this.minuteOption.key = "minutesSpecific";
+      let valuesInt = [];
+      value.forEach((itemValue) => {
+        valuesInt.push(parseInt(itemValue));
+      });
+      this.minuteOption.value = valuesInt.toString();
+    },
     buildMinutes() {
       for (let m = 0; m < 60; m++) {
         let indexMinuteLabel = "" + m;
@@ -245,39 +274,42 @@ export default {
 
         this.minutesList.push(itemMinute);
       }
+    },
+    setValues() {
+      if (this.value.includes("*")) {
+        this.minuteOption.key = "everyMinute";
+        this.minuteOption.value = this.value;
+      }
+
+      if (this.value.includes("/")) {
+        this.minuteOption.key = "everyMinuteAt";
+        this.minuteOption.value = this.value;
+        let inputValue = this.value.split("/");
+        this.everyAnyMinute = parseInt(inputValue[1]);
+        this.startMinute = parseInt(inputValue[0]);
+      }
+
+      if (
+        this.value.includes(",") ||
+        (parseInt(this.value) >= 0 && !isNaN(this.value))
+      ) {
+        this.minuteOption.key = "minutesSpecific";
+        this.minuteOption.value = this.value;
+        let inputValue = JSON.parse("[" + this.value + "]");
+        this.minutesSpecific = inputValue;
+      }
+
+      if (this.value.includes("-")) {
+        this.minuteOption.key = "everyMinuteBetween";
+        this.minuteOption.value = this.value;
+        let inputValue = this.value.split("-");
+        this.betweenMinute = parseInt(inputValue[0]);
+        this.andMinute = parseInt(inputValue[1]);
+      }
     }
   },
   created() {
-    if (this.value.includes("*")) {
-      this.minuteOption.key = "everyMinute";
-      this.minuteOption.value = this.value;
-    }
-
-    if (this.value.includes("/")) {
-      this.minuteOption.key = "everyMinuteAt";
-      this.minuteOption.value = this.value;
-      let inputValue = this.value.split("/");
-      this.everyAnyMinute = parseInt(inputValue[1]);
-      this.startMinute = parseInt(inputValue[0]);
-    }
-
-    if (
-      this.value.includes(",") ||
-      (parseInt(this.value) >= 0 && !isNaN(this.value))
-    ) {
-      this.minuteOption.key = "minutesSpecific";
-      this.minuteOption.value = this.value;
-      let inputValue = JSON.parse("[" + this.value + "]");
-      this.minutesSpecific = inputValue;
-    }
-
-    if (this.value.includes("-")) {
-      this.minuteOption.key = "everyMinuteBetween";
-      this.minuteOption.value = this.value;
-      let inputValue = this.value.split("-");
-      this.betweenMinute = parseInt(inputValue[0]);
-      this.andMinute = parseInt(inputValue[1]);
-    }
+    this.setValues();
     this.buildMinutes();
   }
 };

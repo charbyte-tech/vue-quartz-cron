@@ -54,6 +54,7 @@
                   <v-select
                     class="pt-0 pb-0 mt-0"
                     v-model="yearsSpecific"
+                    @change="yearsSpecificFn"
                     prefix="Años(s) "
                     suffix="especifico(s)"
                     item-text="yearLabel"
@@ -81,6 +82,7 @@
                     item-text="yearLabel"
                     item-value="yearValue"
                     :items="yearsIndexList"
+                    item-disabled="disabledBetweenYearItem"
                     single-line
                     chips
                     deletable-chips
@@ -127,58 +129,77 @@ export default {
     andYear: null,
     initYear: 2016,
     yearsIndexList: [],
-    yearsList: []
+    yearsList: [],
+    reseting: false
   }),
   watch: {
+    value() {
+      if (this.value !== this.yearOption.value) {
+        this.resetValues();
+        this.yearOption.value = this.value;
+        this.setValues();
+      }
+    },
     yearOption: {
       deep: true,
       handler(oldValue, newValue) {
-        if (newValue.key === "everyYear") {
-          this.yearOption.value = "*";
+        if (!this.reseting) {
+          if (newValue.key === "everyYear") {
+            this.yearOption.value = "*";
+          }
+          if (newValue.key === "everyYearAt") {
+            if (!this.startYear || this.startYear === "") {
+              this.startYear = this.initYear;
+            }
+            if (!this.everyAnyYear || this.everyAnyYear === "") {
+              this.everyAnyYear = 1;
+            }
+            this.yearOption.value =
+              parseInt(this.startYear) + "/" + parseInt(this.everyAnyYear);
+          }
+          if (newValue.key === "yearsSpecific") {
+            let valuesInt = [];
+            if (this.yearsSpecific.length == 0) {
+              this.yearsSpecific.push(this.initYear);
+            }
+            this.yearsSpecific.forEach((itemValue) => {
+              valuesInt.push(parseInt(itemValue));
+            });
+            this.yearOption.value = valuesInt.toString();
+          }
+          if (newValue.key === "everyYearBetween") {
+            if (!this.betweenYear || this.betweenYear === "") {
+              this.betweenYear = this.initYear;
+            }
+            if (!this.andYear || this.andYear === "") {
+              this.andYear = this.initYear;
+            }
+            this.yearOption.value =
+              parseInt(this.betweenYear) + "-" + parseInt(this.andYear);
+          }
+          this.updateValue();
         }
-        if (newValue.key === "everyYearAt") {
-          if (!this.startYear || this.startYear === "") {
-            this.startYear = this.initYear;
-          }
-          if (!this.everyAnyYear || this.everyAnyYear === "") {
-            this.everyAnyYear = 1;
-          }
-          this.yearOption.value =
-            parseInt(this.startYear) + "/" + parseInt(this.everyAnyYear);
-        }
-        if (newValue.key === "yearsSpecific") {
-          let valuesInt = [];
-          if (this.yearsSpecific.length == 0) {
-            this.yearsSpecific.push(this.initYear);
-          }
-          this.yearsSpecific.forEach((itemValue) => {
-            valuesInt.push(parseInt(itemValue));
-          });
-          this.yearOption.value = valuesInt.toString();
-        }
-        if (newValue.key === "everyYearBetween") {
-          if (!this.betweenYear || this.betweenYear === "") {
-            this.betweenYear = this.initYear;
-          }
-          if (!this.andYear || this.andYear === "") {
-            this.andYear = this.initYear;
-          }
-          this.yearOption.value =
-            parseInt(this.betweenYear) + "-" + parseInt(this.andYear);
-        }
-        this.updateValue();
       }
     },
-    yearsSpecific(value) {
-      this.yearOption.key = "yearsSpecific";
-      let valuesInt = [];
-      value.forEach((itemValue) => {
-        valuesInt.push(parseInt(itemValue));
+    andYear(value) {
+      this.yearsIndexList = this.yearsIndexList.map((item) => {
+        item.disabledBetweenYearItem = item.yearValue > value;
+        return item;
       });
-      this.yearOption.value = valuesInt.toString();
     }
   },
   methods: {
+    resetValues() {
+      this.reseting = true;
+      this.yearOption.key = null;
+      this.yearOption.value = 0;
+      this.everyAnyYear = null;
+      this.startYear = null;
+      this.yearsSpecific = [];
+      this.betweenYear = null;
+      this.andYear = null;
+      this.reseting = false;
+    },
     updateValue() {
       this.$emit("input", this.yearOption.value + "@");
     },
@@ -221,6 +242,14 @@ export default {
       }
       this.yearOption.value = parseInt(this.betweenYear) + "-" + parseInt(e);
     },
+    yearsSpecificFn(value) {
+      this.yearOption.key = "yearsSpecific";
+      let valuesInt = [];
+      value.forEach((itemValue) => {
+        valuesInt.push(parseInt(itemValue));
+      });
+      this.yearOption.value = valuesInt.toString();
+    },
     buildYears() {
       let indexYear = 0;
       for (let y = this.initYear; y < 2100; y++) {
@@ -240,39 +269,42 @@ export default {
         this.yearsList.push(itemIndexYear);
         indexYear++;
       }
+    },
+    setValues() {
+      if (this.value.includes("*")) {
+        this.yearOption.key = "everyYear";
+        this.yearOption.value = this.value;
+      }
+
+      if (this.value.includes("/")) {
+        this.yearOption.key = "everyYearAt";
+        this.yearOption.value = this.value;
+        let inputValue = this.value.split("/");
+        this.everyAnyYear = parseInt(inputValue[1]);
+        this.startYear = parseInt(inputValue[0]);
+      }
+
+      if (
+        this.value.includes(",") ||
+        (parseInt(this.value) >= 0 && !isNaN(this.value))
+      ) {
+        this.yearOption.key = "yearsSpecific";
+        this.yearOption.value = this.value;
+        let inputValue = JSON.parse("[" + this.value + "]");
+        this.yearsSpecific = inputValue;
+      }
+
+      if (this.value.includes("-")) {
+        this.yearOption.key = "everyYearBetween";
+        this.yearOption.value = this.value;
+        let inputValue = this.value.split("-");
+        this.betweenYear = parseInt(inputValue[0]);
+        this.andYear = parseInt(inputValue[1]);
+      }
     }
   },
   created() {
-    if (this.value.includes("*")) {
-      this.yearOption.key = "everyYear";
-      this.yearOption.value = this.value;
-    }
-
-    if (this.value.includes("/")) {
-      this.yearOption.key = "everyYearAt";
-      this.yearOption.value = this.value;
-      let inputValue = this.value.split("/");
-      this.everyAnyYear = parseInt(inputValue[1]);
-      this.startYear = parseInt(inputValue[0]);
-    }
-
-    if (
-      this.value.includes(",") ||
-      (parseInt(this.value) >= 0 && !isNaN(this.value))
-    ) {
-      this.yearOption.key = "yearsSpecific";
-      this.yearOption.value = this.value;
-      let inputValue = JSON.parse("[" + this.value + "]");
-      this.yearsSpecific = inputValue;
-    }
-
-    if (this.value.includes("-")) {
-      this.yearOption.key = "everyYearBetween";
-      this.yearOption.value = this.value;
-      let inputValue = this.value.split("-");
-      this.betweenYear = parseInt(inputValue[0]);
-      this.andYear = parseInt(inputValue[1]);
-    }
+    this.setValues();
     this.buildYears();
   }
 };

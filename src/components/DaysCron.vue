@@ -92,6 +92,7 @@
                   <v-select
                     class="pt-0 pb-0 mt-0"
                     v-model="daysSpecific"
+                    @change="daysSpecificFn"
                     prefix="Día(s)"
                     suffix="de la semana"
                     item-text="dayLabel"
@@ -116,6 +117,7 @@
                   <v-select
                     class="pt-0 pb-0 mt-0"
                     v-model="daysOfMonthSpecific"
+                    @change="daysOfMonthSpecificFn"
                     prefix="Día(s) número"
                     suffix="del mes"
                     item-text="dayLabel"
@@ -304,7 +306,6 @@ export default {
     colCount: 10,
     rowCount: 4,
     daysOfWeekIndexList: [],
-    daysInMonth: [],
     daysOfWeekList: [],
     daysOfMonthList: [],
     daysIndexOfMonthList: [],
@@ -315,142 +316,156 @@ export default {
     beforeEndOfMonth: null,
     nearestWeekdayOfMonth: null,
     weekdays: null,
-    daysOfMonth: null
+    daysOfMonth: null,
+    reseting: false
   }),
   watch: {
+    value() {
+      if (
+        JSON.stringify(this.value) !== JSON.stringify(this.dayOption.values)
+      ) {
+        this.resetValues();
+        this.dayOption.values = this.value;
+        this.setValues();
+      }
+    },
     dayOption: {
       deep: true,
       handler(oldValue, newValue) {
-        if (newValue.key === "everyDay") {
-          this.dayOption.values.dayOfWeek = "*";
-          this.resetDayData();
+        if (!this.reseting) {
+          if (newValue.key === "everyDay") {
+            this.dayOption.values.dayOfWeek = "*";
+            this.resetDayData();
+          }
+          if (newValue.key === "everyDayAt") {
+            if (!this.startDay || this.startDay === "") {
+              this.startDay = 1;
+            }
+            if (!this.everyAnyDay || this.everyAnyDay === "") {
+              this.everyAnyDay = 1;
+            }
+            this.resetDayOfMonth();
+            this.dayOption.values.dayOfWeek =
+              parseInt(this.startDay) + "/" + parseInt(this.everyAnyDay);
+          }
+          if (newValue.key === "everyDayOfMonthAt") {
+            if (!this.startDayOfMonth || this.startDayOfMonth === "") {
+              this.startDayOfMonth = 1;
+            }
+            if (!this.everyAnyDayOfMonth || this.everyAnyDayOfMonth === "") {
+              this.everyAnyDayOfMonth = 1;
+            }
+            this.resetDayOfWeek();
+            this.dayOption.values.dayOfMonth =
+              parseInt(this.startDayOfMonth) +
+              "/" +
+              parseInt(this.everyAnyDayOfMonth);
+          }
+          if (newValue.key === "daysSpecific") {
+            let valuesInt = [];
+            if (this.daysSpecific.length == 0) {
+              this.daysSpecific.push(1);
+            }
+            this.daysSpecific.forEach((itemValue) => {
+              valuesInt.push(parseInt(itemValue));
+            });
+            this.dayOption.values.dayOfWeek = valuesInt.toString();
+            this.resetDayOfMonth();
+          }
+          if (newValue.key === "daysOfMonthSpecific") {
+            let valuesInt = [];
+            if (this.daysOfMonthSpecific.length == 0) {
+              this.daysOfMonthSpecific.push(1);
+            }
+            this.daysOfMonthSpecific.forEach((itemValue) => {
+              valuesInt.push(parseInt(itemValue));
+            });
+            this.dayOption.values.dayOfMonth = valuesInt.toString();
+            this.resetDayOfWeek();
+          }
+          if (newValue.key === "everyDayBetween") {
+            if (!this.betweenDay || this.betweenDay === "") {
+              this.betweenDay = 1;
+            }
+            if (!this.andDay || this.andDay === "") {
+              this.andDay = 1;
+            }
+            this.dayOption.values.dayOfWeek =
+              parseInt(this.betweenDay) + "-" + parseInt(this.andDay);
+          }
+          if (newValue.key === "lastDayOfMonth") {
+            this.resetDayOfWeek();
+            this.dayOption.values.dayOfMonth = "L";
+          }
+          if (newValue.key === "lastWeekdayOfMonth") {
+            this.resetDayOfWeek();
+            this.dayOption.values.dayOfMonth = "LW";
+          }
+          if (newValue.key === "lastDaySpecificOfWeekOfMonth") {
+            this.resetDayOfMonth();
+            if (
+              !this.lastDaySpecificOfWeekOfMonth ||
+              this.lastDaySpecificOfWeekOfMonth === ""
+            ) {
+              this.lastDaySpecificOfWeekOfMonth = 1;
+            }
+            this.dayOption.values.dayOfWeek =
+              this.lastDaySpecificOfWeekOfMonth + "L";
+          }
+          if (newValue.key === "beforeEndOfMonth") {
+            this.resetDayOfWeek();
+            if (!this.beforeEndOfMonth || this.beforeEndOfMonth === "") {
+              this.beforeEndOfMonth = 1;
+            }
+            this.dayOption.values.dayOfMonth = "L-" + this.beforeEndOfMonth;
+          }
+          if (newValue.key === "nearestWeekdayOfMonth") {
+            this.resetDayOfWeek();
+            if (
+              !this.nearestWeekdayOfMonth ||
+              this.nearestWeekdayOfMonth === ""
+            ) {
+              this.nearestWeekdayOfMonth = 1;
+            }
+            this.dayOption.values.dayOfMonth = this.nearestWeekdayOfMonth + "W";
+          }
+          if (newValue.key === "weekdaysPerMonth") {
+            this.resetDayOfMonth();
+            if (!this.weekdays || this.weekdays === "") {
+              this.weekdays = 1;
+            }
+            if (!this.daysOfMonth || this.daysOfMonth === "") {
+              this.daysOfMonth = 1;
+            }
+            this.dayOption.values.dayOfWeek =
+              parseInt(this.daysOfMonth) + "#" + parseInt(this.weekdays);
+          }
+          this.updateValue();
         }
-        if (newValue.key === "everyDayAt") {
-          if (!this.startDay || this.startDay === "") {
-            this.startDay = 1;
-          }
-          if (!this.everyAnyDay || this.everyAnyDay === "") {
-            this.everyAnyDay = 1;
-          }
-          this.resetDayOfMonth();
-          this.dayOption.values.dayOfWeek =
-            parseInt(this.startDay) + "/" + parseInt(this.everyAnyDay);
-        }
-        if (newValue.key === "everyDayOfMonthAt") {
-          if (!this.startDayOfMonth || this.startDayOfMonth === "") {
-            this.startDayOfMonth = 1;
-          }
-          if (!this.everyAnyDayOfMonth || this.everyAnyDayOfMonth === "") {
-            this.everyAnyDayOfMonth = 1;
-          }
-          this.resetDayOfWeek();
-          this.dayOption.values.dayOfMonth =
-            parseInt(this.startDayOfMonth) +
-            "/" +
-            parseInt(this.everyAnyDayOfMonth);
-        }
-        if (newValue.key === "daysSpecific") {
-          let valuesInt = [];
-          if (this.daysSpecific.length == 0) {
-            this.daysSpecific.push(1);
-          }
-          this.daysSpecific.forEach((itemValue) => {
-            valuesInt.push(parseInt(itemValue));
-          });
-          this.dayOption.values.dayOfWeek = valuesInt.toString();
-          this.resetDayOfMonth();
-        }
-        if (newValue.key === "daysOfMonthSpecific") {
-          let valuesInt = [];
-          if (this.daysOfMonthSpecific.length == 0) {
-            this.daysOfMonthSpecific.push(1);
-          }
-          this.daysOfMonthSpecific.forEach((itemValue) => {
-            valuesInt.push(parseInt(itemValue));
-          });
-          this.dayOption.values.dayOfMonth = valuesInt.toString();
-          this.resetDayOfWeek();
-        }
-        if (newValue.key === "everyDayBetween") {
-          if (!this.betweenDay || this.betweenDay === "") {
-            this.betweenDay = 1;
-          }
-          if (!this.andDay || this.andDay === "") {
-            this.andDay = 1;
-          }
-          this.dayOption.values.dayOfWeek =
-            parseInt(this.betweenDay) + "-" + parseInt(this.andDay);
-        }
-        if (newValue.key === "lastDayOfMonth") {
-          this.resetDayOfWeek();
-          this.dayOption.values.dayOfMonth = "L";
-        }
-        if (newValue.key === "lastWeekdayOfMonth") {
-          this.resetDayOfWeek();
-          this.dayOption.values.dayOfMonth = "LW";
-        }
-        if (newValue.key === "lastDaySpecificOfWeekOfMonth") {
-          this.resetDayOfMonth();
-          if (
-            !this.lastDaySpecificOfWeekOfMonth ||
-            this.lastDaySpecificOfWeekOfMonth === ""
-          ) {
-            this.lastDaySpecificOfWeekOfMonth = 1;
-          }
-          this.dayOption.values.dayOfWeek =
-            this.lastDaySpecificOfWeekOfMonth + "L";
-        }
-        if (newValue.key === "beforeEndOfMonth") {
-          this.resetDayOfWeek();
-          if (!this.beforeEndOfMonth || this.beforeEndOfMonth === "") {
-            this.beforeEndOfMonth = 1;
-          }
-          this.dayOption.values.dayOfMonth = "L-" + this.beforeEndOfMonth;
-        }
-        if (newValue.key === "nearestWeekdayOfMonth") {
-          this.resetDayOfWeek();
-          if (
-            !this.nearestWeekdayOfMonth ||
-            this.nearestWeekdayOfMonth === ""
-          ) {
-            this.nearestWeekdayOfMonth = 1;
-          }
-          this.dayOption.values.dayOfMonth = this.nearestWeekdayOfMonth + "W";
-        }
-        if (newValue.key === "weekdaysPerMonth") {
-          this.resetDayOfMonth();
-          if (!this.weekdays || this.weekdays === "") {
-            this.weekdays = 1;
-          }
-          if (!this.daysOfMonth || this.daysOfMonth === "") {
-            this.daysOfMonth = 1;
-          }
-          this.dayOption.values.dayOfWeek =
-            parseInt(this.daysOfMonth) + "#" + parseInt(this.weekdays);
-        }
-        this.updateValue();
       }
-    },
-    daysSpecific(value) {
-      this.dayOption.key = "daysSpecific";
-      let valuesInt = [];
-      value.forEach((itemValue) => {
-        valuesInt.push(parseInt(itemValue));
-      });
-      this.dayOption.values.dayOfWeek = valuesInt.toString();
-      this.resetDayOfMonth();
-    },
-    daysOfMonthSpecific(value) {
-      this.dayOption.key = "daysOfMonthSpecific";
-      let valuesInt = [];
-      value.forEach((itemValue) => {
-        valuesInt.push(parseInt(itemValue));
-      });
-      this.dayOption.values.dayOfMonth = valuesInt.toString();
-      this.resetDayOfWeek();
     }
   },
   methods: {
+    resetValues() {
+      this.reseting = true;
+      this.dayOption.key = null;
+      this.dayOption.values.dayOfMonth = "?";
+      this.dayOption.values.dayOfWeek = "*";
+      this.everyAnyDay = null;
+      this.startDay = null;
+      this.daysSpecific = [];
+      this.daysOfMonthSpecific = [];
+      this.betweenDay = null;
+      this.andDay = null;
+      this.everyAnyDayOfMonth = null;
+      this.startDayOfMonth = null;
+      this.lastDaySpecificOfWeekOfMonth = null;
+      this.beforeEndOfMonth = null;
+      this.nearestWeekdayOfMonth = null;
+      this.weekdays = null;
+      this.daysOfMonth = null;
+      this.reseting = false;
+    },
     updateValue() {
       this.$emit("input", this.dayOption.values);
     },
@@ -574,6 +589,24 @@ export default {
       this.dayOption.values.dayOfWeek =
         parseInt(e) + "#" + parseInt(this.weekdays);
     },
+    daysSpecificFn(value) {
+      this.dayOption.key = "daysSpecific";
+      let valuesInt = [];
+      value.forEach((itemValue) => {
+        valuesInt.push(parseInt(itemValue));
+      });
+      this.dayOption.values.dayOfWeek = valuesInt.toString();
+      this.resetDayOfMonth();
+    },
+    daysOfMonthSpecificFn(value) {
+      this.dayOption.key = "daysOfMonthSpecific";
+      let valuesInt = [];
+      value.forEach((itemValue) => {
+        valuesInt.push(parseInt(itemValue));
+      });
+      this.dayOption.values.dayOfMonth = valuesInt.toString();
+      this.resetDayOfWeek();
+    },
     buildDays() {
       for (let d = 0; d < 7; d++) {
         let indexDayLabel = "" + d;
@@ -636,139 +669,143 @@ export default {
         };
         this.weekdaysPerMonthList.push(itemDay);
       }
+    },
+    setValues() {
+      if (this.value.dayOfWeek.includes("*")) {
+        this.dayOption.key = "everyDay";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+      }
+
+      if (this.value.dayOfWeek.includes("/")) {
+        this.dayOption.key = "everyDayAt";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+
+        let inputValue = this.value.dayOfWeek.split("/");
+        this.everyAnyDay = parseInt(inputValue[1]);
+        this.startDay = parseInt(inputValue[0]);
+      }
+
+      if (this.value.dayOfMonth.includes("/")) {
+        this.dayOption.key = "everyDayOfMonthAt";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+
+        let inputValue = this.value.dayOfMonth.split("/");
+        this.everyAnyDayOfMonth = parseInt(inputValue[1]);
+        this.startDayOfMonth = parseInt(inputValue[0]);
+      }
+
+      if (
+        this.value.dayOfWeek.includes(",") ||
+        (parseInt(this.value.dayOfWeek) >= 0 && !isNaN(this.value.dayOfWeek))
+      ) {
+        this.dayOption.key = "daysSpecific";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+
+        let inputValue = JSON.parse("[" + this.value.dayOfWeek + "]");
+        this.daysSpecific = inputValue;
+      }
+
+      if (
+        this.value.dayOfMonth.includes(",") ||
+        (parseInt(this.value.dayOfMonth) >= 0 && !isNaN(this.value.dayOfMonth))
+      ) {
+        this.dayOption.key = "daysOfMonthSpecific";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+
+        let inputValue = JSON.parse("[" + this.value.dayOfMonth + "]");
+        this.daysOfMonthSpecific = inputValue;
+      }
+
+      if (this.value.dayOfWeek.includes("-")) {
+        this.dayOption.key = "everyDayBetween";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+
+        let inputValue = this.value.dayOfWeek.split("-");
+        this.betweenDay = parseInt(inputValue[0]);
+        this.andDay = parseInt(inputValue[1]);
+      }
+
+      if (this.value.dayOfMonth === "L") {
+        this.dayOption.key = "lastDayOfMonth";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+      }
+
+      if (this.value.dayOfMonth === "LW") {
+        this.dayOption.key = "lastWeekdayOfMonth";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+      }
+
+      if (this.value.dayOfWeek.endsWith("L")) {
+        this.dayOption.key = "lastDaySpecificOfWeekOfMonth";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+        this.lastDaySpecificOfWeekOfMonth = parseInt(
+          this.value.dayOfWeek.replace("L", "")
+        );
+      }
+
+      if (this.value.dayOfMonth.startsWith("L-")) {
+        this.dayOption.key = "beforeEndOfMonth";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+        this.beforeEndOfMonth = parseInt(
+          this.value.dayOfMonth.replace("L-", "")
+        );
+      }
+
+      if (this.value.dayOfMonth.endsWith("W")) {
+        this.dayOption.key = "nearestWeekdayOfMonth";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+        this.nearestWeekdayOfMonth = parseInt(
+          this.value.dayOfMonth.replace("W", "")
+        );
+      }
+
+      if (this.value.dayOfWeek.includes("#")) {
+        this.dayOption.key = "weekdaysPerMonth";
+        this.dayOption.values = {
+          dayOfMonth: this.value.dayOfMonth,
+          dayOfWeek: this.value.dayOfWeek
+        };
+        let inputValue = this.value.dayOfWeek.split("#");
+        this.weekdays = parseInt(inputValue[0]);
+        this.daysOfMonth = parseInt(inputValue[1]);
+      }
     }
   },
   created() {
-    if (this.value.dayOfWeek.includes("*")) {
-      this.dayOption.key = "everyDay";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-    }
-
-    if (this.value.dayOfWeek.includes("/")) {
-      this.dayOption.key = "everyDayAt";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-
-      let inputValue = this.value.dayOfWeek.split("/");
-      this.everyAnyDay = parseInt(inputValue[1]);
-      this.startDay = parseInt(inputValue[0]);
-    }
-
-    if (this.value.dayOfMonth.includes("/")) {
-      this.dayOption.key = "everyDayOfMonthAt";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-
-      let inputValue = this.value.dayOfMonth.split("/");
-      this.everyAnyDayOfMonth = parseInt(inputValue[1]);
-      this.startDayOfMonth = parseInt(inputValue[0]);
-    }
-
-    if (
-      this.value.dayOfWeek.includes(",") ||
-      (parseInt(this.value.dayOfWeek) >= 0 && !isNaN(this.value.dayOfWeek))
-    ) {
-      this.dayOption.key = "daysSpecific";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-
-      let inputValue = JSON.parse("[" + this.value.dayOfWeek + "]");
-      this.daysSpecific = inputValue;
-    }
-
-    if (
-      this.value.dayOfMonth.includes(",") ||
-      (parseInt(this.value.dayOfMonth) >= 0 && !isNaN(this.value.dayOfMonth))
-    ) {
-      this.dayOption.key = "daysOfMonthSpecific";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-
-      let inputValue = JSON.parse("[" + this.value.dayOfMonth + "]");
-      this.daysOfMonthSpecific = inputValue;
-    }
-
-    if (this.value.dayOfWeek.includes("-")) {
-      this.dayOption.key = "everyDayBetween";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-
-      let inputValue = this.value.dayOfWeek.split("-");
-      this.betweenDay = parseInt(inputValue[0]);
-      this.andDay = parseInt(inputValue[1]);
-    }
-
-    if (this.value.dayOfMonth === "L") {
-      this.dayOption.key = "lastDayOfMonth";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-    }
-
-    if (this.value.dayOfMonth === "LW") {
-      this.dayOption.key = "lastWeekdayOfMonth";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-    }
-
-    if (this.value.dayOfWeek.endsWith("L")) {
-      this.dayOption.key = "lastDaySpecificOfWeekOfMonth";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-      this.lastDaySpecificOfWeekOfMonth = parseInt(
-        this.value.dayOfWeek.replace("L", "")
-      );
-    }
-
-    if (this.value.dayOfMonth.startsWith("L-")) {
-      this.dayOption.key = "beforeEndOfMonth";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-      this.beforeEndOfMonth = parseInt(this.value.dayOfMonth.replace("L-", ""));
-    }
-
-    if (this.value.dayOfMonth.endsWith("W")) {
-      this.dayOption.key = "nearestWeekdayOfMonth";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-      this.nearestWeekdayOfMonth = parseInt(
-        this.value.dayOfMonth.replace("W", "")
-      );
-    }
-
-    if (this.value.dayOfWeek.includes("#")) {
-      this.dayOption.key = "weekdaysPerMonth";
-      this.dayOption.values = {
-        dayOfMonth: this.value.dayOfMonth,
-        dayOfWeek: this.value.dayOfWeek
-      };
-      let inputValue = this.value.dayOfWeek.split("#");
-      this.weekdays = parseInt(inputValue[0]);
-      this.daysOfMonth = parseInt(inputValue[1]);
-    }
-
+    this.setValues();
     this.buildDays();
     this.buildDaysOfMonth();
     this.buildWeekdaysPerMonth();

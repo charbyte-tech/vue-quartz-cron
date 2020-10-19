@@ -54,6 +54,7 @@
                   <v-select
                     class="pt-0 pb-0 mt-0"
                     v-model="hoursSpecific"
+                    @change="hoursSpecificFn"
                     prefix="Horas(s) "
                     suffix="especifica(s)"
                     item-text="hourLabel"
@@ -81,6 +82,7 @@
                     item-text="hourLabel"
                     item-value="hourValue"
                     :items="hoursIndexList"
+                    item-disabled="disabledBetweenHourItem"
                     single-line
                     chips
                     deletable-chips
@@ -126,58 +128,77 @@ export default {
     betweenHour: null,
     andHour: null,
     hoursIndexList: [],
-    hoursList: []
+    hoursList: [],
+    reseting: false
   }),
   watch: {
+    value() {
+      if (this.value !== this.hourOption.value) {
+        this.resetValues();
+        this.hourOption.value = this.value;
+        this.setValues();
+      }
+    },
     hourOption: {
       deep: true,
       handler(oldValue, newValue) {
-        if (newValue.key === "everyHour") {
-          this.hourOption.value = "*";
+        if (!this.reseting) {
+          if (newValue.key === "everyHour") {
+            this.hourOption.value = "*";
+          }
+          if (newValue.key === "everyHourAt") {
+            if (!this.startHour || this.startHour === "") {
+              this.startHour = 0;
+            }
+            if (!this.everyAnyHour || this.everyAnyHour === "") {
+              this.everyAnyHour = 1;
+            }
+            this.hourOption.value =
+              parseInt(this.startHour) + "/" + parseInt(this.everyAnyHour);
+          }
+          if (newValue.key === "hoursSpecific") {
+            let valuesInt = [];
+            if (this.hoursSpecific.length == 0) {
+              this.hoursSpecific.push(0);
+            }
+            this.hoursSpecific.forEach((itemValue) => {
+              valuesInt.push(parseInt(itemValue));
+            });
+            this.hourOption.value = valuesInt.toString();
+          }
+          if (newValue.key === "everyHourBetween") {
+            if (!this.betweenHour || this.betweenHour === "") {
+              this.betweenHour = 0;
+            }
+            if (!this.andHour || this.andHour === "") {
+              this.andHour = 0;
+            }
+            this.hourOption.value =
+              parseInt(this.betweenHour) + "-" + parseInt(this.andHour);
+          }
+          this.updateValue();
         }
-        if (newValue.key === "everyHourAt") {
-          if (!this.startHour || this.startHour === "") {
-            this.startHour = 0;
-          }
-          if (!this.everyAnyHour || this.everyAnyHour === "") {
-            this.everyAnyHour = 1;
-          }
-          this.hourOption.value =
-            parseInt(this.startHour) + "/" + parseInt(this.everyAnyHour);
-        }
-        if (newValue.key === "hoursSpecific") {
-          let valuesInt = [];
-          if (this.hoursSpecific.length == 0) {
-            this.hoursSpecific.push(0);
-          }
-          this.hoursSpecific.forEach((itemValue) => {
-            valuesInt.push(parseInt(itemValue));
-          });
-          this.hourOption.value = valuesInt.toString();
-        }
-        if (newValue.key === "everyHourBetween") {
-          if (!this.betweenHour || this.betweenHour === "") {
-            this.betweenHour = 0;
-          }
-          if (!this.andHour || this.andHour === "") {
-            this.andHour = 0;
-          }
-          this.hourOption.value =
-            parseInt(this.betweenHour) + "-" + parseInt(this.andHour);
-        }
-        this.updateValue();
       }
     },
-    hoursSpecific(value) {
-      this.hourOption.key = "hoursSpecific";
-      let valuesInt = [];
-      value.forEach((itemValue) => {
-        valuesInt.push(parseInt(itemValue));
+    andHour(value) {
+      this.hoursIndexList = this.hoursIndexList.map((item) => {
+        item.disabledBetweenHourItem = item.hourValue > value;
+        return item;
       });
-      this.hourOption.value = valuesInt.toString();
     }
   },
   methods: {
+    resetValues() {
+      this.reseting = true;
+      this.hourOption.key = null;
+      this.hourOption.value = 0;
+      this.everyAnyHours = null;
+      this.startHours = null;
+      this.hoursSpecific = [];
+      this.betweenHours = null;
+      this.andHours = null;
+      this.reseting = false;
+    },
     updateValue() {
       this.$emit("input", this.hourOption.value);
     },
@@ -220,6 +241,14 @@ export default {
       }
       this.hourOption.value = parseInt(this.betweenHour) + "-" + parseInt(e);
     },
+    hoursSpecificFn(value) {
+      this.hourOption.key = "hoursSpecific";
+      let valuesInt = [];
+      value.forEach((itemValue) => {
+        valuesInt.push(parseInt(itemValue));
+      });
+      this.hourOption.value = valuesInt.toString();
+    },
     buildHours() {
       for (let h = 0; h < 24; h++) {
         let indexHourLabel = "" + h;
@@ -243,39 +272,42 @@ export default {
 
         this.hoursList.push(itemHour);
       }
+    },
+    setValues() {
+      if (this.value.includes("*")) {
+        this.hourOption.key = "everyHour";
+        this.hourOption.value = this.value;
+      }
+
+      if (this.value.includes("/")) {
+        this.hourOption.key = "everyHourAt";
+        this.hourOption.value = this.value;
+        let inputValue = this.value.split("/");
+        this.everyAnyHour = parseInt(inputValue[1]);
+        this.startHour = parseInt(inputValue[0]);
+      }
+
+      if (
+        this.value.includes(",") ||
+        (parseInt(this.value) >= 0 && !isNaN(this.value))
+      ) {
+        this.hourOption.key = "hoursSpecific";
+        this.hourOption.value = this.value;
+        let inputValue = JSON.parse("[" + this.value + "]");
+        this.hoursSpecific = inputValue;
+      }
+
+      if (this.value.includes("-")) {
+        this.hourOption.key = "everyHourBetween";
+        this.hourOption.value = this.value;
+        let inputValue = this.value.split("-");
+        this.betweenHour = parseInt(inputValue[0]);
+        this.andHour = parseInt(inputValue[1]);
+      }
     }
   },
   created() {
-    if (this.value.includes("*")) {
-      this.hourOption.key = "everyHour";
-      this.hourOption.value = this.value;
-    }
-
-    if (this.value.includes("/")) {
-      this.hourOption.key = "everyHourAt";
-      this.hourOption.value = this.value;
-      let inputValue = this.value.split("/");
-      this.everyAnyHour = parseInt(inputValue[1]);
-      this.startHour = parseInt(inputValue[0]);
-    }
-
-    if (
-      this.value.includes(",") ||
-      (parseInt(this.value) >= 0 && !isNaN(this.value))
-    ) {
-      this.hourOption.key = "hoursSpecific";
-      this.hourOption.value = this.value;
-      let inputValue = JSON.parse("[" + this.value + "]");
-      this.hoursSpecific = inputValue;
-    }
-
-    if (this.value.includes("-")) {
-      this.hourOption.key = "everyHourBetween";
-      this.hourOption.value = this.value;
-      let inputValue = this.value.split("-");
-      this.betweenHour = parseInt(inputValue[0]);
-      this.andHour = parseInt(inputValue[1]);
-    }
+    this.setValues();
     this.buildHours();
   }
 };

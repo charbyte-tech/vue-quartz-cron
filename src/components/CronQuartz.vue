@@ -1,12 +1,14 @@
 <template>
   <v-card tile height="auto">
-    <v-card-title class="primary white--text">
+    <v-card-title v-if="showDescription" class="primary white--text">
       <v-icon large left color="white">mdi-text-recognition</v-icon>
-      <span class="title headline mb-1">{{ description }}</span>
+      <span class="title headline mb-1">{{ descriptionValue }}</span>
     </v-card-title>
-    <v-card-subtitle class="primary white--text">
+    <v-card-subtitle v-if="showValue" class="primary white--text">
       <v-icon small left color="white">mdi-regex</v-icon>
-      <span class="title headline mb-1 text-decoration-underline">{{ value }}</span>
+      <span class="title headline mb-1 text-decoration-underline">{{
+        value
+      }}</span>
     </v-card-subtitle>
     <v-card-text class="cardText">
       <v-row>
@@ -70,7 +72,9 @@ const presetCronValidate = {
 export default {
   name: "CronQuartz",
   props: {
-    value: { type: String }
+    value: { type: String },
+    showDescription: { default: false, type: Boolean },
+    showValue: { default: false, type: Boolean }
   },
   components: {
     SecondsCron,
@@ -81,7 +85,7 @@ export default {
     YearsCron
   },
   data: () => ({
-    description: null,
+    descriptionValue: null,
     cronExpresion: null,
     secondsCron: "*",
     minutesCron: "*",
@@ -129,6 +133,12 @@ export default {
     },
     yearsCron() {
       this.__updateValue();
+    },
+    descriptionValue() {
+      this.$emit("descripcion-value", this.descriptionValue);
+    },
+    cronExpression() {
+      this.$emit("input", this.cronExpression);
     }
   },
   methods: {
@@ -152,15 +162,13 @@ export default {
         this.yearsCron;
       const cronResult = cron(this.cronExpression, presetCronValidate);
       if (cronResult.isValid()) {
-        this.description = cronstrue.toString(this.cronExpression, {
+        this.descriptionValue = cronstrue.toString(this.cronExpression, {
           locale: "es",
           dayOfWeekStartIndexZero: false
         });
-        this.$emit("input", this.cronExpression);
       } else {
         const errorValue = cronResult.getError();
-        this.description = errorValue;
-        this.$emit("input", this.cronExpression);
+        this.descriptionValue = errorValue;
       }
     }
   },
@@ -179,6 +187,7 @@ export default {
       this.yearsCron = validValue.years;
     }
     this.__updateValue();
+    this.$emit("mounted", this);
   }
 };
 </script>

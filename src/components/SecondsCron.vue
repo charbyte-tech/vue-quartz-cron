@@ -52,6 +52,7 @@
                   <v-select
                     class="pt-0 pb-0 mt-0"
                     v-model="secondsSpecific"
+                    @change="secondsSpecificFn"
                     prefix="Segundo(s) "
                     suffix="especifico(s)"
                     item-text="secondLabel"
@@ -160,7 +161,7 @@ export default {
             if (this.secondsSpecific.length == 0) {
               this.secondsSpecific.push(0);
             }
-            this.secondsSpecific.forEach(itemValue => {
+            this.secondsSpecific.forEach((itemValue) => {
               valuesInt.push(parseInt(itemValue));
             });
             this.secondOption.value = valuesInt.toString();
@@ -180,7 +181,7 @@ export default {
       }
     },
     andSecond(value) {
-      this.secondsIndexList = this.secondsIndexList.map(item => {
+      this.secondsIndexList = this.secondsIndexList.map((item) => {
         item.disabledBetweenSecondItem = item.secondValue > value;
         return item;
       });
@@ -241,6 +242,14 @@ export default {
       }
       this.secondOption.value =
         parseInt(this.betweenSecond) + "-" + parseInt(e);
+    },
+    secondsSpecificFn(value) {
+      this.secondOption.key = "secondsSpecific";
+      let valuesInt = [];
+      value.forEach((itemValue) => {
+        valuesInt.push(parseInt(itemValue));
+      });
+      this.secondOption.value = valuesInt.toString();
     },
     buildSeconds() {
       for (let s = 0; s < 60; s++) {
