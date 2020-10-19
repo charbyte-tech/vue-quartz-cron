@@ -1,18 +1,12 @@
 <template>
   <v-card tile height="auto">
     <v-card-title class="primary white--text">
-      <v-icon large left color="white">
-        mdi-text-recognition
-      </v-icon>
+      <v-icon large left color="white">mdi-text-recognition</v-icon>
       <span class="title headline mb-1">{{ description }}</span>
     </v-card-title>
     <v-card-subtitle class="primary white--text">
-      <v-icon small left color="white">
-        mdi-regex
-      </v-icon>
-      <span class="title headline mb-1 text-decoration-underline">{{
-        value
-      }}</span>
+      <v-icon small left color="white">mdi-regex</v-icon>
+      <span class="title headline mb-1 text-decoration-underline">{{ value }}</span>
     </v-card-subtitle>
     <v-card-text class="cardText">
       <v-row>
@@ -88,6 +82,7 @@ export default {
   },
   data: () => ({
     description: null,
+    cronExpresion: null,
     secondsCron: "*",
     minutesCron: "*",
     hoursCron: "*",
@@ -100,6 +95,18 @@ export default {
   }),
   watch: {
     value() {
+      if (this.cronExpression && this.value !== this.cronExpression) {
+        const cronResult = cron(this.value, presetCronValidate);
+        if (cronResult.isValid()) {
+          this.secondsCron = cronResult.value.seconds;
+          this.minutesCron = cronResult.value.minutes;
+          this.hoursCron = cronResult.value.hours;
+          this.daysCron.dayOfWeek = cronResult.value.daysOfWeek;
+          this.daysCron.dayOfMonth = cronResult.value.daysOfMonth;
+          this.monthsCron = cronResult.value.months;
+          this.yearsCron = cronResult.value.years;
+        }
+      }
       this.__updateValue();
     },
     secondsCron() {
@@ -129,7 +136,7 @@ export default {
       this.monthsCron = this.monthsCron.replace("@", "");
       this.daysCron.dayOfWeek = this.daysCron.dayOfWeek.replace("@", "");
       this.yearsCron = this.yearsCron.replace("@", "");
-      let cronExpression =
+      this.cronExpression =
         this.secondsCron +
         " " +
         this.minutesCron +
@@ -143,17 +150,17 @@ export default {
         this.daysCron.dayOfWeek +
         " " +
         this.yearsCron;
-      const cronResult = cron(cronExpression, presetCronValidate);
+      const cronResult = cron(this.cronExpression, presetCronValidate);
       if (cronResult.isValid()) {
-        this.description = cronstrue.toString(cronExpression, {
+        this.description = cronstrue.toString(this.cronExpression, {
           locale: "es",
           dayOfWeekStartIndexZero: false
         });
-        this.$emit("input", cronExpression);
+        this.$emit("input", this.cronExpression);
       } else {
         const errorValue = cronResult.getError();
         this.description = errorValue;
-        this.$emit("input", errorValue);
+        this.$emit("input", this.cronExpression);
       }
     }
   },

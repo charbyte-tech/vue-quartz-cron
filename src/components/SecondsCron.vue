@@ -1,9 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      <v-icon large left>
-        mdi-clock-outline
-      </v-icon>
+      <v-icon large left>mdi-clock-outline</v-icon>
       <span class="title headline mb-1">Al segundo</span>
     </v-card-title>
     <v-card-text>
@@ -63,9 +61,11 @@
                     chips
                     multiple
                     deletable-chips
-                  /> </v-col
-              ></v-row></div
-          ></template>
+                  />
+                </v-col>
+              </v-row>
+            </div>
+          </template>
         </v-radio>
         <v-radio value="everySecondBetween">
           <template v-slot:label>
@@ -81,6 +81,7 @@
                     item-text="secondLabel"
                     item-value="secondValue"
                     :items="secondsIndexList"
+                    item-disabled="disabledBetweenSecondItem"
                     single-line
                     chips
                     deletable-chips
@@ -116,6 +117,7 @@ export default {
     value: { type: String, default: "0" }
   },
   data: () => ({
+    reseting: false,
     secondOption: {
       key: null,
       value: 0
@@ -129,55 +131,73 @@ export default {
     secondsList: []
   }),
   watch: {
+    value() {
+      if (this.value !== this.secondOption.value) {
+        this.resetValues();
+        this.secondOption.value = this.value;
+        this.setValues();
+      }
+    },
     secondOption: {
       deep: true,
       handler(oldValue, newValue) {
-        if (newValue.key === "everySecond") {
-          this.secondOption.value = "*";
+        if (!this.reseting) {
+          if (newValue.key === "everySecond") {
+            this.secondOption.value = "*";
+          }
+          if (newValue.key === "everySecondAt") {
+            if (!this.startSecond || this.startSecond === "") {
+              this.startSecond = 0;
+            }
+            if (!this.everyAnySecond || this.everyAnySecond === "") {
+              this.everyAnySecond = 1;
+            }
+            this.secondOption.value =
+              parseInt(this.startSecond) + "/" + parseInt(this.everyAnySecond);
+          }
+          if (newValue.key === "secondsSpecific") {
+            let valuesInt = [];
+            if (this.secondsSpecific.length == 0) {
+              this.secondsSpecific.push(0);
+            }
+            this.secondsSpecific.forEach(itemValue => {
+              valuesInt.push(parseInt(itemValue));
+            });
+            this.secondOption.value = valuesInt.toString();
+          }
+          if (newValue.key === "everySecondBetween") {
+            if (!this.betweenSecond || this.betweenSecond === "") {
+              this.betweenSecond = 0;
+            }
+            if (!this.andSecond || this.andSecond === "") {
+              this.andSecond = 0;
+            }
+            this.secondOption.value =
+              parseInt(this.betweenSecond) + "-" + parseInt(this.andSecond);
+          }
+          this.updateValue();
         }
-        if (newValue.key === "everySecondAt") {
-          if (!this.startSecond || this.startSecond === "") {
-            this.startSecond = 0;
-          }
-          if (!this.everyAnySecond || this.everyAnySecond === "") {
-            this.everyAnySecond = 1;
-          }
-          this.secondOption.value =
-            parseInt(this.startSecond) + "/" + parseInt(this.everyAnySecond);
-        }
-        if (newValue.key === "secondsSpecific") {
-          let valuesInt = [];
-          if (this.secondsSpecific.length == 0) {
-            this.secondsSpecific.push(0);
-          }
-          this.secondsSpecific.forEach((itemValue) => {
-            valuesInt.push(parseInt(itemValue));
-          });
-          this.secondOption.value = valuesInt.toString();
-        }
-        if (newValue.key === "everySecondBetween") {
-          if (!this.betweenSecond || this.betweenSecond === "") {
-            this.betweenSecond = 0;
-          }
-          if (!this.andSecond || this.andSecond === "") {
-            this.andSecond = 0;
-          }
-          this.secondOption.value =
-            parseInt(this.betweenSecond) + "-" + parseInt(this.andSecond);
-        }
-        this.updateValue();
       }
     },
-    secondsSpecific(value) {
-      this.secondOption.key = "secondsSpecific";
-      let valuesInt = [];
-      value.forEach((itemValue) => {
-        valuesInt.push(parseInt(itemValue));
+    andSecond(value) {
+      this.secondsIndexList = this.secondsIndexList.map(item => {
+        item.disabledBetweenSecondItem = item.secondValue > value;
+        return item;
       });
-      this.secondOption.value = valuesInt.toString();
     }
   },
   methods: {
+    resetValues() {
+      this.reseting = true;
+      this.secondOption.key = null;
+      this.secondOption.value = 0;
+      this.everyAnySecond = null;
+      this.startSecond = null;
+      this.secondsSpecific = [];
+      this.betweenSecond = null;
+      this.andSecond = null;
+      this.reseting = false;
+    },
     updateValue() {
       this.$emit("input", this.secondOption.value);
     },
@@ -244,39 +264,41 @@ export default {
         };
         this.secondsList.push(itemSecond);
       }
+    },
+    setValues() {
+      if (this.value.includes("*")) {
+        this.secondOption.key = "everySecond";
+        this.secondOption.value = this.value;
+      }
+
+      if (this.value.includes("/")) {
+        this.secondOption.key = "everySecondAt";
+        this.secondOption.value = this.value;
+        let inputValue = this.value.split("/");
+        this.everyAnySecond = parseInt(inputValue[1]);
+        this.startSecond = parseInt(inputValue[0]);
+      }
+      if (
+        this.value.includes(",") ||
+        (parseInt(this.value) >= 0 && !isNaN(this.value))
+      ) {
+        this.secondOption.key = "secondsSpecific";
+        this.secondOption.value = this.value;
+        let inputValue = JSON.parse("[" + this.value + "]");
+        this.secondsSpecific = inputValue;
+      }
+
+      if (this.value.includes("-")) {
+        this.secondOption.key = "everySecondBetween";
+        this.secondOption.value = this.value;
+        let inputValue = this.value.split("-");
+        this.betweenSecond = parseInt(inputValue[0]);
+        this.andSecond = parseInt(inputValue[1]);
+      }
     }
   },
   created() {
-    if (this.value.includes("*")) {
-      this.secondOption.key = "everySecond";
-      this.secondOption.value = this.value;
-    }
-
-    if (this.value.includes("/")) {
-      this.secondOption.key = "everySecondAt";
-      this.secondOption.value = this.value;
-      let inputValue = this.value.split("/");
-      this.everyAnySecond = parseInt(inputValue[1]);
-      this.startSecond = parseInt(inputValue[0]);
-    }
-    if (
-      this.value.includes(",") ||
-      (parseInt(this.value) >= 0 && !isNaN(this.value))
-    ) {
-      this.secondOption.key = "secondsSpecific";
-      this.secondOption.value = this.value;
-      let inputValue = JSON.parse("[" + this.value + "]");
-      this.secondsSpecific = inputValue;
-    }
-
-    if (this.value.includes("-")) {
-      this.secondOption.key = "everySecondBetween";
-      this.secondOption.value = this.value;
-      let inputValue = this.value.split("-");
-      this.betweenSecond = parseInt(inputValue[0]);
-      this.andSecond = parseInt(inputValue[1]);
-    }
-
+    this.setValues();
     this.buildSeconds();
   }
 };
